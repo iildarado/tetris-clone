@@ -277,8 +277,98 @@ class PlayPiece {
         this.orientation = points;
 
         for (let i=0; i<4; i++) {
-            this.pieces[i].x = this.pos.x + points[i][0] * gridSpace;
-            this.pieces[i].y = this.pos.y + points[i][1] * gridSpace;
+            this.pieces[i].pos.x = this.pos.x + points[i][0] * gridSpace;
+            this.pieces[i].pos.y = this.pos.y + points[i][1] * gridSpace;
+        }
+    }
+
+    // Add an offset to the position of current piece
+    addPos(x, y) {
+        this.pos.x += x;
+        this.pos.y += y;
+        
+        if (this.pieces) {
+            for (let i=0; i<4; i++) {
+                this.pieces[i].pos.x += x;
+                this.pieces[i].pos.y += y;
+            }
+        }
+    }
+
+    // Check if there will be a collision in the future
+    futureCollision(x, y, rotation) {
+        let xx, yy, points = 0;
+        if (rotation !== this.rotation) {
+            points = orientPoints(this.pieceType, rotation);
+        }
+
+        for (let i=0; i< this.pieces.length; i++) {
+            if (points) {
+                xx = this.pos.x + points[i][0] * gridSpace + x;
+                yy = this.pos.y + points[i][1] * gridSpace + y;
+            } else {
+                xx = this.pieces[i].pos.x + x;
+                yy = this.pieces[i].pos.y + y;
+            }
+
+            if (xx < gameEdgeLeft || xx + gridSpace > gameEdgeRight || yy + gridSpace > height) {
+                return true;
+            }
+            
+            for (let j=0; j<gridPieces.length; i++) {
+                if (xx === gridPieces[j].pos.x) {
+                    if (yy >= gridPieces[j].pos.y && yy <= gridPieces[j].pos.y + gridSpace) {
+                        return true;
+                    }
+                    if (yy + gridSpace > gridPieces[j].pos.y && yy + gridSpace <= gridPieces[j].pos.y + gridSpace) {
+                        return true;
+                    }
+                }
+            }
+
+        }
+    }
+
+    // Handle user input
+    input(key) {
+        switch (key) {
+            case LEFT_ARROW:
+                if (!this.futureCollision(-gridSpace, 0, this.rotation)) {
+                    this.addPos(-gridSpace, 0);
+                }
+                break;
+            case RIGHT_ARROW:
+                if (!this.futureCollision(gridSpace, 0, this.rotation)) {
+                    this.addPos(gridSpace, 0);
+                }
+                break;
+            case UP_ARROW:
+                let newRotation = this.rotation + 1 > 3 ? 0 : this.rotation + 1;
+                if (!this.futureCollision(0, 0, newRotation)) {
+                    this.rotation = newRotation;
+                    this.updatePoints();
+                }
+                break;
+        }
+    }
+
+    // Rotate the current piece
+    rotate() {
+        this.rotation += 1
+        if (this.rotation > 3) {
+            this.rotation = 0;
+        }
+        this.updatePoints();
+    }
+
+    // Show the current piece
+    show() {
+        for (let i=0; i<this.pieces.length; i++) {
+            this.pieces[i].show();
+        }
+
+        for (let i=0; i<this.nextPieces.length; i++) {
+            this.nextPieces[i].show();
         }
     }
 }
