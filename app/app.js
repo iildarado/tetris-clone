@@ -141,4 +141,145 @@ function draw() {
         gridWorkers[0].work();
     }
 
+    // Explain the controls
+    textAlign(CENTER);
+    fill(255);
+    noStroke();
+    textSize(14);
+    text("Controls:\n&#8593;\n&#8592; &#8594; &#8595;\n", 75, 155);
+    text("Left and Right:\nmove side to side", 75, 230);
+    text("Up:\nrotate", 75, 280);
+    text("Down:\nfall faster", 75, 330);
+    text("R:\nreset game", 75, 380)
+
+    // Show the game over message
+    if (gameOver) {
+        textAlign(CENTER);
+        fill(colorDark);
+        noStroke();
+        textSize(54);
+        text("Game Over", 300, 270);
+    }
+
+    // Draw the game border
+    strokeWeight(3);
+    stroke("#304550");
+    noFill();
+    rect(0, 0, width, height);
+
 }
+
+// Function called when
+function keyPressed() {
+    if (keyCode === 82) {
+        resetGame();
+    }
+
+    if (!pauseGame) {
+        if (keyCode === UP_ARROW) {
+            fallingPiece.input(UP_ARROW);
+        }
+        if (keyCode === LEFT_ARROW) {
+            fallingPiece.input(LEFT_ARROW);
+        } else if (keyCode === RIGHT_ARROW) {
+            fallingPiece.input(RIGHT_ARROW);
+        }
+    }
+}
+
+// Class for the falling piece
+class PlayPiece {
+    constructor() {
+        this.pos = createVector(0, 0);
+        this.rotation = 0;
+        this.nextPieceType = Math.floor(Math.random() * 7);
+        this.nextPieces = [];
+        this.pieceType = 0;
+        this.pieces = [];
+        this.orientation = [];
+        this.fallen = false;
+    }
+
+    // Generate the next piece
+    nextPiece() {
+        this.nextPieceType = pseudoRandom(this.pieceType);
+        this.nextPieces = [];
+
+        const points = orientPoints(this.nextPieceType, 0);
+        let xx = 525, yy = 490;
+
+        if (this.nextPieceType !== 0 && this.nextPieceType !== 3 && this.nextPieceType !== 5) {
+            xx += (gridSpace * 0.5);
+        }
+        if (this.nextPieceType !== 5) {
+            xx -= (gridSpace * 0.5);
+        }
+
+        for (let i = 0; i < 4; i++) {
+            this.nextPieces.push(
+                new Square(
+                    xx + points[i][0] * gridSpace, 
+                    yy + points[i][1] * gridSpace, 
+                    this.nextPieceType
+                )
+            );
+        }
+    }
+
+    // Make the piece fall
+    fall(amount) {
+        if (!this.futureCollision(0, amount, this.rotation)) {
+            this.addPos(0, amount);
+            this.fallen = true;
+        } else {
+            if (!this.fallen) {
+                pauseGame = true;
+                gameOver = true;
+            } else {
+                this.commitShape();
+            }
+        }
+    }
+
+    // Reset the current piece
+    resetPiece() {
+        this.rotation = 0;
+        this.fallen = false;
+        this.pos.x = 330;
+        this.pos.y = -60;
+
+        this.pieceType = this.nextPieceType;
+
+        this.nextPiece();
+        this.newPoints();
+    }
+
+    // Generate the points for the current piece
+    newPoints() {
+        const points = orientPoints(this.pieceType, this.rotation);
+        this.orientation = points;
+        this.pieces = [];
+
+        for(let i=0; i<points.lenght; i++) {
+            this.pieces.push(
+                new Square(
+                    this.pos.x + points[i][0] * gridSpace,
+                    this.pos.y + points[i][1] * gridSpace,
+                    this.pieceType
+                )
+            );
+        }
+    }
+
+    // Update the position of the current piece
+    updatePoints() {
+        const points = orientPoints(this.pieceType, this.rotation);
+        this.orientation = points;
+
+        for (let i=0; i<4; i++) {
+            this.pieces[i].x = this.pos.x + points[i][0] * gridSpace;
+            this.pieces[i].y = this.pos.y + points[i][1] * gridSpace;
+        }
+    }
+}
+
